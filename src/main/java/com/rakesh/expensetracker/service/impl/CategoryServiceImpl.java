@@ -3,7 +3,6 @@ package com.rakesh.expensetracker.service.impl;
 import com.rakesh.expensetracker.entity.Category;
 import com.rakesh.expensetracker.repository.CategoryRepository;
 import com.rakesh.expensetracker.service.CategoryService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
+
 @Transactional
 public class CategoryServiceImpl implements CategoryService {
 

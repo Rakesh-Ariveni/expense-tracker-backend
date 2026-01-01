@@ -7,37 +7,30 @@ import com.rakesh.expensetracker.config.JwtService;
 import com.rakesh.expensetracker.entity.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.rakesh.expensetracker.dto.LoginRequest;
+import com.rakesh.expensetracker.dto.RegisterRequest;
+import com.rakesh.expensetracker.service.AuthService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@CrossOrigin(origins = "*") // 🔥 REQUIRED for Swagger/browser
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @Autowired
-    private UserRepository userRepository;
+    private final AuthService authService;
 
-    @Autowired
-    private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private JwtService jwtService;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
 
     @PostMapping("/register")
-    public User register(@RequestBody User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+        return authService.register(request);
     }
 
     @PostMapping("/login")
-    public AuthResponse login(@RequestBody AuthRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid password");
-        }
-
-        String token = jwtService.generateToken(user.getEmail());
-        return new AuthResponse(token);
+    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+        return authService.login(request);
     }
 }

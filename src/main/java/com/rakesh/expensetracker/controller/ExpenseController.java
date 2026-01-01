@@ -1,18 +1,29 @@
 package com.rakesh.expensetracker.controller;
 
-import com.rakesh.expensetracker.dto.ExpenseRequest;
-import com.rakesh.expensetracker.dto.ExpenseResponse;
-import com.rakesh.expensetracker.entity.Expense;
-import com.rakesh.expensetracker.entity.User;
-import com.rakesh.expensetracker.entity.Category;
-import com.rakesh.expensetracker.service.ExpenseService;
-import com.rakesh.expensetracker.service.UserService;
-import com.rakesh.expensetracker.service.CategoryService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.rakesh.expensetracker.dto.ExpenseDTO;
+import com.rakesh.expensetracker.dto.ExpenseRequest;
+import com.rakesh.expensetracker.dto.ExpenseResponse;
+import com.rakesh.expensetracker.entity.Category;
+import com.rakesh.expensetracker.entity.Expense;
+import com.rakesh.expensetracker.entity.User;
+import com.rakesh.expensetracker.service.CategoryService;
+import com.rakesh.expensetracker.service.ExpenseService;
+import com.rakesh.expensetracker.service.UserService;
 
 @RestController
 @RequestMapping("/api/expenses")
@@ -31,7 +42,8 @@ public class ExpenseController {
     @PostMapping
     public ResponseEntity<ExpenseResponse> addExpense(@RequestBody ExpenseRequest req) {
         User user = userService.getUserById(req.getUserId());
-        Category category = categoryService.getCategoryByName("Food")  // adjust logic
+        Category category = categoryService
+                .getCategoryByName(req.getCategoryName())
                 .orElseThrow(() -> new RuntimeException("Category not found"));
 
         Expense e = new Expense();
@@ -52,6 +64,23 @@ public class ExpenseController {
         resp.setCategoryId(category.getId());
 
         return ResponseEntity.status(201).body(resp);
+    }
+    
+    @GetMapping
+    public Page<ExpenseDTO> getExpenses(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size,
+            @RequestParam(defaultValue = "expenseDate") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) LocalDateTime from,
+            @RequestParam(required = false) LocalDateTime to
+    ) {
+        String email = authentication.getName();
+        return expenseService.getExpenses(
+                email, page, size, sortBy, direction, category, from, to
+        );
     }
 
     @GetMapping("/user/{userId}")

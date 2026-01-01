@@ -7,11 +7,16 @@ import com.rakesh.expensetracker.entity.User;
 import com.rakesh.expensetracker.repository.ExpenseRepository;
 import com.rakesh.expensetracker.repository.UserRepository;
 import com.rakesh.expensetracker.service.DashboardService;
+
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+
 
 @Service
 public class DashboardServiceImpl implements DashboardService {
@@ -19,87 +24,90 @@ public class DashboardServiceImpl implements DashboardService {
     private final ExpenseRepository expenseRepository;
     private final UserRepository userRepository;
 
-    public DashboardServiceImpl(ExpenseRepository expenseRepository, UserRepository userRepository) {
+    public DashboardServiceImpl(ExpenseRepository expenseRepository,
+                                UserRepository userRepository) {
         this.expenseRepository = expenseRepository;
         this.userRepository = userRepository;
     }
 
     @Override
-    public DashboardResponse getDashboard(Long userId) {
-        User user = userRepository.findById(userId)
+    @Cacheable(value = "dashboard", key = "#email")
+    public DashboardResponse getDashboardByEmail(String email) {
+
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        List<Expense> expenses = expenseRepository.findByUser(user);
-
         DashboardResponse response = new DashboardResponse();
-        response.setUserId(userId);
+        response.setUserId(user.getId());
 
-        if (expenses.isEmpty()) return response;
+        // 1️⃣ Total
+        response.setTotalExpenses(
+                expenseRepository.findTotalExpensesByUser(user)
+        );
 
-        // 1️⃣ Total Expenses
-        double total = expenses.stream().mapToDouble(Expense::getAmount).sum();
-        response.setTotalExpenses(total);
-
-        // 2️⃣ Expenses by Category
-        Map<String, Double> byCategory = expenses.stream()
-                .collect(Collectors.groupingBy(
-                        e -> e.getCategory().getName(),
-                        Collectors.summingDouble(Expense::getAmount)
-                ));
+        // 2️⃣ Category aggregation
+        Map<String, Double> byCategory = new HashMap<>();
+        for (Object[] row : expenseRepository.findExpensesByCategory(user)) {
+            byCategory.put((String) row[0], (Double) row[1]);
+        }
         response.setExpensesByCategory(byCategory);
 
-        // 3️⃣ Top Spending Category — Using PriorityQueue
-        PriorityQueue<Map.Entry<String, Double>> pq =
-                new PriorityQueue<>((a, b) -> Double.compare(b.getValue(), a.getValue()));
-        pq.addAll(byCategory.entrySet());
-        response.setTopCategory(pq.peek().getKey());
+     // 3️⃣ Top category
+        String topCategory =
+                expenseRepository
+                        .findTopCategory(user, PageRequest.of(0, 1))
+                        .stream()
+                        .findFirst()
+                        .orElse(null);
 
-        // 4️⃣ Weekly Spending Trend
-        Map<String, Double> weeklyTrend = new TreeMap<>();
-        LocalDate today = LocalDate.now();
-        for (int i = 6; i >= 0; i--) {
-            LocalDate date = today.minusDays(i);
-            double sum = expenses.stream()
-                    .filter(e -> e.getExpenseDate().toLocalDate().equals(date))
-                    .mapToDouble(Expense::getAmount)
-                    .sum();
-            weeklyTrend.put(date.toString(), sum);
+        response.setTopCategory(topCategory);
+
+
+        // 4️⃣ Weekly trend
+        Map<String, Double> weeklyTrend = new LinkedHashMap<>();
+        LocalDateTime startDate =
+                LocalDate.now().minusDays(6).atStartOfDay();
+
+        for (Object[] row : expenseRepository.findWeeklyTrend(user, startDate)) {
+            weeklyTrend.put(row[0].toString(), (Double) row[1]);
         }
         response.setWeeklyTrends(weeklyTrend);
 
-        // 5️⃣ Most Frequent Category
-        String frequent = expenses.stream()
-                .collect(Collectors.groupingBy(e -> e.getCategory().getName(), Collectors.counting()))
-                .entrySet().stream()
-                .max(Map.Entry.comparingByValue())
-                .map(Map.Entry::getKey)
-                .orElse("N/A");
-        response.setMostFrequentCategory(frequent);
+        // 5️⃣ Most frequent category
+        String mostFrequentCategory =
+                expenseRepository
+                        .findMostFrequentCategory(user, PageRequest.of(0, 1))
+                        .stream()
+                        .findFirst()
+                        .orElse(null);
 
-        // 6️⃣ Max Spending Streak — DP (Kadane’s)
-        List<Double> amounts = expenses.stream()
-                .sorted(Comparator.comparing(Expense::getExpenseDate))
+        response.setMostFrequentCategory(mostFrequentCategory);
+
+        // 6️⃣ Max spending streak (JVM logic is correct)
+        List<Double> amounts = expenseRepository
+                .findRecentExpenses(user, PageRequest.of(0, 100))
+                .stream()
                 .map(Expense::getAmount)
-                .collect(Collectors.toList());
+                .toList();
 
-        double maxStreak = amounts.get(0), current = amounts.get(0);
-        for (int i = 1; i < amounts.size(); i++) {
-            current = Math.max(amounts.get(i), current + amounts.get(i));
-            maxStreak = Math.max(maxStreak, current);
+        double max = 0, current = 0;
+        for (double amt : amounts) {
+            current = Math.max(amt, current + amt);
+            max = Math.max(max, current);
         }
-        response.setMaxSpendingStreak(maxStreak);
+        response.setMaxSpendingStreak(max);
 
-        // 7️⃣ Recent Expenses
-        List<Expense> recent = expenses.stream()
-                .sorted(Comparator.comparing(Expense::getExpenseDate).reversed())
-                .limit(5)
-                .collect(Collectors.toList());
-        response.setRecentExpenses(mapToExpenseDTOList(recent));
+        // 7️⃣ Recent expenses
+        response.setRecentExpenses(
+                mapToDTO(
+                        expenseRepository.findRecentExpenses(user, PageRequest.of(0, 5))
+                )
+        );
 
         return response;
     }
 
-    private List<ExpenseDTO> mapToExpenseDTOList(List<Expense> expenses) {
+    private List<ExpenseDTO> mapToDTO(List<Expense> expenses) {
         return expenses.stream()
                 .map(e -> new ExpenseDTO(
                         e.getId(),
@@ -108,6 +116,6 @@ public class DashboardServiceImpl implements DashboardService {
                         e.getExpenseDate(),
                         e.getCategory().getName()
                 ))
-                .collect(Collectors.toList());
+                .toList();
     }
 }

@@ -17,8 +17,17 @@ public class ExpenseRequest {
 
     @NotNull
     private Long categoryId;
+    
+    private String categoryName;
 
-    // Getters & Setters
+
+    public String getCategoryName() {
+		return categoryName;
+	}
+	public void setCategoryName(String categoryName) {
+		this.categoryName = categoryName;
+	}
+	// Getters & Setters
     public Double getAmount() { return amount; }
     public void setAmount(Double amount) { this.amount = amount; }
 
