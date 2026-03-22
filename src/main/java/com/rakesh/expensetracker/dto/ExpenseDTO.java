@@ -1,8 +1,11 @@
 package com.rakesh.expensetracker.dto;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
-public class ExpenseDTO {
+public class ExpenseDTO implements Serializable {
+	
+    private static final long serialVersionUID = 1L;
     private Long id;
     private Double amount;
     private String description;

@@ -1,5 +1,6 @@
 package com.rakesh.expensetracker.repository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -14,10 +15,11 @@ import com.rakesh.expensetracker.entity.User;
 
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
-	// =========================
+    // =========================
     // LISTING APIs (Pagination)
     // =========================
     Page<Expense> findByUser(User user, Pageable pageable);
+
     List<Expense> findByUser(User user);
 
     Page<Expense> findByUserAndCategory_Name(
@@ -36,7 +38,7 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     // =========================
     // DASHBOARD QUERIES
     // =========================
-	
+
     @Query("""
         SELECT e FROM Expense e
         WHERE e.user = :user
@@ -63,39 +65,40 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     List<Object[]> findExpensesByCategory(@Param("user") User user);
 
     @Query("""
-    	    SELECT e.category.name
-    	    FROM Expense e
-    	    WHERE e.user = :user
-    	    GROUP BY e.category.name
-    	    ORDER BY SUM(e.amount) DESC
-    	""")
-    	List<String> findTopCategory(
-    	        @Param("user") User user,
-    	        Pageable pageable
-    	);
-
-    @Query("""
-        SELECT DATE(e.expenseDate), SUM(e.amount)
+        SELECT e.category.name
         FROM Expense e
         WHERE e.user = :user
-          AND e.expenseDate >= :startDate
-        GROUP BY DATE(e.expenseDate)
-        ORDER BY DATE(e.expenseDate)
+        GROUP BY e.category.name
+        ORDER BY SUM(e.amount) DESC
     """)
-    List<Object[]> findWeeklyTrend(
+    List<String> findTopCategory(
             @Param("user") User user,
-            @Param("startDate") LocalDateTime startDate
+            Pageable pageable
     );
 
+    // 🔥 UPDATED (optimized for index usage)
     @Query("""
-    	    SELECT e.category.name
+    	    SELECT e.expenseDay, SUM(e.amount)
     	    FROM Expense e
     	    WHERE e.user = :user
-    	    GROUP BY e.category.name
-    	    ORDER BY COUNT(e.id) DESC
+    	      AND e.expenseDay >= :startDate
+    	    GROUP BY e.expenseDay
+    	    ORDER BY e.expenseDay
     	""")
-    	List<String> findMostFrequentCategory(
+    	List<Object[]> findWeeklyTrend(
     	        @Param("user") User user,
-    	        Pageable pageable
+    	        @Param("startDate") LocalDate startDate
     	);
+
+    @Query("""
+        SELECT e.category.name
+        FROM Expense e
+        WHERE e.user = :user
+        GROUP BY e.category.name
+        ORDER BY COUNT(e.id) DESC
+    """)
+    List<String> findMostFrequentCategory(
+            @Param("user") User user,
+            Pageable pageable
+    );
 }

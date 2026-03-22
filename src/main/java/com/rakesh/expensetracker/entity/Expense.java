@@ -2,14 +2,29 @@ package com.rakesh.expensetracker.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(
     name = "expenses",
     indexes = {
+
+        // 🔥 Pagination + sorting
         @Index(name = "idx_user_date", columnList = "user_id, expense_date"),
-        @Index(name = "idx_user_category", columnList = "user_id, category_id")
+
+        // 🔥 Category filtering
+        @Index(name = "idx_user_category", columnList = "user_id, category_id"),
+
+        // 🔥 Dashboard aggregation
+        @Index(name = "idx_category", columnList = "category_id"),
+
+        // 🔥 Sorting optimization
+        @Index(name = "idx_created_at", columnList = "created_at"),
+
+        // 🔥 Time-series optimization (advanced)
+        @Index(name = "idx_user_expense_day", columnList = "user_id, expense_day")
     }
 )
 @Data
@@ -27,7 +42,14 @@ public class Expense {
     private String description;
 
     private LocalDateTime expenseDate;
-    
+
+    // 🔥 NEW FIELD (important)
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    // 🔥 OPTIONAL BUT POWERFUL
+    @Column(name = "expense_day")
+    private LocalDate expenseDay;
 
     // Many expenses belong to one user
     @ManyToOne
@@ -38,6 +60,16 @@ public class Expense {
     @ManyToOne
     @JoinColumn(name = "category_id")
     private Category category;
+
+    // 🔥 Auto-set fields
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+
+        if (this.expenseDate != null) {
+            this.expenseDay = this.expenseDate.toLocalDate();
+        }
+    }
     
     public Long getId() {
         return id;

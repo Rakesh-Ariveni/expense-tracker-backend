@@ -2,11 +2,17 @@ package com.rakesh.expensetracker.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "users")
+@Table(
+    name = "users",
+    indexes = {
+        @Index(name = "idx_user_email", columnList = "email") // 🔥 important
+    }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,6 +28,19 @@ public class User {
     @Column(unique = true, nullable = false)
     private String email;
 
+    private String password;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Expense> expenses;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
+    
     public Long getId() {
 		return id;
 	}
@@ -69,12 +88,4 @@ public class User {
 	public void setExpenses(List<Expense> expenses) {
 		this.expenses = expenses;
 	}
-
-	private String password;
-
-    private LocalDateTime createdAt;
-
-    // One user can have multiple expenses
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<Expense> expenses;
 }

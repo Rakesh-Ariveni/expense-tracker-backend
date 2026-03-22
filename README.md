@@ -1,201 +1,298 @@
-# Expense Tracker Backend
+# 🚀 Expense Tracker Backend (Production-Ready)
 
-A production-ready Spring Boot backend application for managing personal expenses with JWT authentication, pagination, sorting, filtering, dashboard analytics, and AWS deployment.
+A **production-grade Spring Boot backend system** designed for managing personal expenses with a strong focus on **scalability, reliability, and observability**.
 
----
-
-## 🚀 Features
-
-### 🔐 Authentication & Security
-- User Registration & Login using JWT
-- Stateless authentication with Spring Security
-- Secure REST APIs protected via Authorization: Bearer token
-- Centralized JWT filter and security configuration
+Unlike a basic CRUD application, this project incorporates **real-world backend engineering practices** such as caching, rate limiting, idempotency, structured logging, monitoring, and containerized deployment.
 
 ---
 
-### 💸 Expense Management
-- Add, Update, Delete expenses
-- Each expense is mapped to a specific authenticated user
-- Category-based expense tracking
-- Strong ownership validation (user-level data isolation)
+# 🔥 Key Highlights
+
+* 🔐 Secure JWT-based authentication
+* ⚡ Redis caching for performance optimization
+* 🛡 Rate limiting & idempotency for reliability
+* 📊 Observability using logs, metrics & health checks
+* 🐳 Dockerized deployment with Docker Compose
+* ☁️ Deployed on AWS EC2 with RDS
 
 ---
 
-### 📄 Pagination, Sorting & Filtering (System Design – Core)
-Implemented **server-side pagination & filtering** using Spring Data JPA.
+# 🧱 Core Features
 
-✔ Pagination  
-✔ Sorting (any column, asc/desc)  
+## 🔐 Authentication & Security
+
+* User Registration & Login using JWT
+* Stateless authentication with Spring Security
+* Secure APIs using `Authorization: Bearer <token>`
+* Centralized JWT filter and security configuration
+
+---
+
+## 💸 Expense Management
+
+* Add, Update, Delete expenses
+* User-specific data isolation (multi-user safe)
+* Category-based expense tracking
+* Strong ownership validation
+
+---
+
+## 📄 Pagination, Sorting & Filtering
+
+Implemented at **database level for performance**
+
+✔ Pagination
+✔ Sorting (any column, asc/desc)
 ✔ Filtering:
-- By category
-- By date range
 
-**Query parameters supported:**
-- `page`
-- `size`
-- `sortBy`
-- `direction`
-- `category`
-- `from`
-- `to`
+* By category
+* By date range
 
-All filtering and sorting is done **at DB level for performance**.
+### Query Params Supported:
+
+```
+page, size, sortBy, direction, category, from, to
+```
 
 ---
 
-### 📊 Dashboard Analytics
+## 📊 Dashboard Analytics
+
 Optimized dashboard API providing:
 
-- Total expenses per user
-- Category-wise expense aggregation
-- Top spending category
-- Most frequent category
-- Recent expenses (limited & ordered)
-- Max spending streak (in-memory calculation)
-
-**Design approach:**
-- Aggregations using `SUM`, `GROUP BY`
-- Pagination for recent expenses
-- JVM-level logic only where sequential processing is required
+* Total expenses per user
+* Category-wise aggregation (`SUM`, `GROUP BY`)
+* Top spending category
+* Most frequent category
+* Recent transactions (paginated)
+* Max spending streak (in-memory logic)
 
 ---
 
-###☁️ Deployment & DevOps
-- Dockerized Spring Boot application
-- Deployed on AWS EC2
-- MySQL database hosted on AWS RDS
-- Environment-based configuration
-- Ready for horizontal scalability
+# ⚡ Performance & Scalability Enhancements
+
+## 🚀 Redis Caching
+
+* Integrated Redis for caching dashboard responses
+* Reduced database load significantly
+* Improved response time for read-heavy APIs
 
 ---
 
-### 🧪 API Testing & Documentation
-- Swagger UI integration
-- APIs tested via Postman
-- Clean request/response DTO architecture
+## 🗄 Database Optimization
+
+* Applied indexing on frequently queried columns
+* Improved query performance for filtering & sorting
 
 ---
 
-## 🛠️ Tech Stack
+## 🔄 Async Processing
 
-- Java 11
-- Spring Boot
-- Spring Security + JWT
-- Spring Data JPA
-- MySQL
-- Docker
-- AWS EC2
-- AWS RDS
-- Maven
-- Swagger
-- Postman
+* Used asynchronous processing for non-blocking operations
+* Improved API responsiveness
 
 ---
 
-## 📂 Project Structure
+# 🛡 Reliability & System Safety
+
+## 🚫 Rate Limiting
+
+* Implemented request throttling (Token Bucket Algorithm)
+* Prevents abuse and protects APIs
+
+---
+
+## 🔁 Idempotency Support
+
+* Prevents duplicate request processing
+* Ensures safe retry mechanisms
+
+---
+
+## ⚠️ Global Exception Handling
+
+* Centralized error handling using `@RestControllerAdvice`
+* Consistent API error responses
+
+---
+
+# 📊 Observability (Production-Level)
+
+## 🧾 Structured Logging
+
+* Implemented structured logging across layers
+* Correlation ID added for request tracing across logs
+
+---
+
+## 📈 Metrics & Monitoring
+
+* Integrated Micrometer for custom metrics
+* Tracked:
+
+  * API requests
+  * Errors
+  * Cache behavior
+
+---
+
+## ❤️ Health Checks
+
+* Spring Boot Actuator integration
+* Endpoint:
+
+```
+/actuator/health
+```
+
+---
+
+# 🐳 DevOps & Deployment
+
+## Dockerized Application
+
+* Multi-stage Docker build
+* Lightweight and portable deployment
+
+---
+
+## Docker Compose Setup
+
+* Orchestrates:
+
+  * Backend service
+  * Redis
+* Shared network for inter-service communication
+
+---
+
+## ☁️ AWS Deployment
+
+* Backend deployed on EC2
+* MySQL hosted on AWS RDS
+* Environment-based configuration
+
+---
+
+# 🛠️ Tech Stack
+
+* Java 11
+* Spring Boot
+* Spring Security + JWT
+* Spring Data JPA
+* MySQL (AWS RDS)
+* Redis
+* Docker & Docker Compose
+* AWS EC2
+* Micrometer (Metrics)
+* Swagger / Postman
+
+---
+
+# 📂 Project Structure
 
 ```
 src
-├── main
-│ ├── java
-│ │ └── com.rakesh.expensetracker
-│ │ ├── config # Security, JWT, CORS
-│ │ ├── controller # REST Controllers
-│ │ ├── service # Business Logic
-│ │ ├── repository # JPA Repositories
-│ │ ├── entity # JPA Entities
-│ │ └── dto # Request / Response DTOs
-│ └── resources
-│ └── application.properties
-└── test
+├── config         # Security, Redis, Configurations
+├── controller     # REST APIs
+├── service        # Business Logic
+├── repository     # JPA Repositories
+├── entity         # Database Models
+├── dto            # Request/Response DTOs
+├── exception      # Global Exception Handling
+```
 
 ---
 
-## 🔐 Authentication Flow (JWT)
-1. User registers → password stored using BCrypt hashing
+# 🔐 Authentication Flow
+
+1. User registers → password hashed using BCrypt
 2. User logs in → JWT token generated
-3. Client sends token in: Authorization: Bearer <JWT>
-4. JWT filter validates token and sets authentication context
+3. Client sends token in header
+4. JWT filter validates and sets authentication context
 
 ---
 
-## 📊 Dashboard Design (System Design Explanation)
-- Heavy computations pushed to database layer
-- Read-heavy endpoints optimized using pagination
-- JVM logic used only for sequential computations
-- Architecture is cache-ready for future Redis integration
+# 🧪 API Documentation
 
----
-
-## 📄 API Documentation
-Swagger UI available at:
+Swagger UI:
 
 ```
 /swagger-ui/index.html
 ```
 
-## 🧪 Sample APIs
+---
 
-### Authentication
-- `POST /api/auth/register`
-- `POST /api/auth/login`
+# 📌 Sample APIs
+
+### Auth
+
+```
+POST /api/auth/register
+POST /api/auth/login
+```
 
 ### Expenses
-- `POST /api/expenses`
-- `GET /api/expenses?page=0&size=5`
-- `GET /api/expenses?sortBy=amount&direction=asc`
-- `GET /api/expenses?category=Food`
-- `GET /api/expenses?from=2025-01-01T00:00:00&to=2025-01-31T23:59:59`
+
+```
+POST /api/expenses
+POST /api/categories
+GET /api/categories
+GET /api/expenses?page=0&size=5
+GET /api/expenses?category=Food
+```
 
 ### Dashboard
-- `GET /api/dashboard`
+
+```
+GET /api/dashboard
+```
 
 ---
 
-##▶️ Running the Project
+# 🚀 Running the Project
 
-### 1️⃣ Clone the repository
+### Local
 
-```
-git clone https://github.com/Rakesh-Ariveni/expense-tracker-backend.git
-```
-
-### 2️⃣ Configure MySQL in `application.properties`
-```
-spring.datasource.url=jdbc:mysql://localhost:3306/expensetracker
-spring.datasource.username=your_username
-spring.datasource.password=your_password
-```
-
-### 3️⃣ Run the application
 ```
 mvn spring-boot:run
 ```
----
-
-##☁️ Deployment
-- Application packaged using Docker
-- Deployed on AWS EC2
-- MySQL hosted on AWS RDS
-- Production-ready configuration
 
 ---
 
-## 📌 Future Enhancements
-- Redis caching for dashboard
-- Cursor-based pagination
-- Rate limiting
-- Async processing
-- AWS S3 integration
-- Observability & monitoring
+### Docker
+
+```
+docker-compose up -d
+```
 
 ---
 
-## ❤️ Contributing
-Pull requests are welcome.
+# 🔮 Future Enhancements
 
-## 📬 Contact
-For any queries:  
-**Rakesh Ariveni**  
+* Prometheus + Grafana (real-time monitoring)
+* API Versioning
+* CI/CD pipeline (GitHub Actions)
+* Nginx reverse proxy
+* Unit Testing(JUNit, Mockito)
+* Kafka for event-driven architecture
+* Microservices architecture
+* AWS S3 integration
+
+---
+
+# 💡 Key Learning Outcome
+
+This project focuses on **building production-ready backend systems**, covering:
+
+* Scalability (Caching, Async)
+* Reliability (Rate limiting, Idempotency)
+* Observability (Logging, Metrics, Monitoring)
+* Deployment (Docker, AWS)
+
+---
+
+# 👨‍💻 Author
+
+**Rakesh Ariveni**
 GitHub: https://github.com/Rakesh-Ariveni

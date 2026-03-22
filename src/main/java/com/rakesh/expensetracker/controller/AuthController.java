@@ -1,36 +1,60 @@
 package com.rakesh.expensetracker.controller;
 
-import com.rakesh.expensetracker.model.AuthRequest;
-import com.rakesh.expensetracker.model.AuthResponse;
-import com.rakesh.expensetracker.repository.UserRepository;
-import com.rakesh.expensetracker.config.JwtService;
-import com.rakesh.expensetracker.entity.User;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.rakesh.expensetracker.dto.LoginRequest;
 import com.rakesh.expensetracker.dto.RegisterRequest;
 import com.rakesh.expensetracker.service.AuthService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import com.rakesh.expensetracker.service.MonitoringService;
+import com.rakesh.expensetracker.service.RateLimitService;
 
-@CrossOrigin(origins = "*") // 🔥 REQUIRED for Swagger/browser
+import jakarta.validation.Valid;
+
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final AuthService authService;
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
-    public AuthController(AuthService authService) {
+    private final AuthService authService;
+    private final RateLimitService rateLimitService;
+    private final MonitoringService monitoringService;
+
+
+    public AuthController(AuthService authService, RateLimitService rateLimitService, MonitoringService monitoringService) {
         this.authService = authService;
+		this.rateLimitService = rateLimitService;
+		this.monitoringService = monitoringService;
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequest request) {
+
+        log.info("API HIT: Register email={}", request.getEmail());
+        monitoringService.incrementApi("register");
+
         return authService.register(request);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+
+        log.info("API HIT: Login email={}", request.getEmail());
+        String email = request.getEmail();
+        monitoringService.incrementApi("login");
+        
+        if (!rateLimitService.isAllowed(email, 3, 1)) {
+            throw new RuntimeException("Too many login attempts");
+        }
+
         return authService.login(request);
     }
 }

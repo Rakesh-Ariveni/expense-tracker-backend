@@ -1,9 +1,12 @@
 package com.rakesh.expensetracker.dto;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-public class DashboardResponse {
+public class DashboardResponse implements Serializable {
+	
+    private static final long serialVersionUID = 1L;
     private Long userId;
     private Double totalExpenses;
     private Map<String, Double> expensesByCategory;

@@ -2,16 +2,33 @@ package com.rakesh.expensetracker.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.util.List;
 
 @Entity
-@Table(name = "categories")
+@Table(
+    name = "categories",
+    indexes = {
+        @Index(name = "idx_category_name", columnList = "name") // 🔥 optional but good
+    }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Category {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(unique = true, nullable = false)
+    private String name;
+
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+    private List<Expense> expenses;
+
+    
     public Long getId() {
 		return id;
 	}
@@ -36,14 +53,4 @@ public class Category {
 		this.expenses = expenses;
 	}
 
-	@Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(unique = true, nullable = false)
-    private String name;
-
-    // One category can have multiple expenses
-    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
-    private List<Expense> expenses;
 }

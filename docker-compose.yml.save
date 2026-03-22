@@ -1,0 +1,62 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: expense-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: expense_db
+      MYSQL_USER: expense_user
+      MYSQL_PASSWORD: expense_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  backend:
+    build: .
+    image: expense-tracker-backend
+    container_name: expense-backend
+    depends_on:
+      - mysql
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/expense_db
+      SPRING_DATASOURCE_USERNAME: expense_user
+      SPRING_DATASOURCE_PASSWORD: expense_pass
+
+volumes:
+  mysql_data:
+version: '3.8'
+
+services:
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  backend:
+    image: rakeshariveni/expense-tracker-backend:latest
+    container_name: expense-tracker
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+    depends_on:
+      - redis
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+docker-compose up -d
+
