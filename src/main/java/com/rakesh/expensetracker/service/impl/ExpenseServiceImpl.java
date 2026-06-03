@@ -18,11 +18,15 @@ import com.rakesh.expensetracker.dto.ExpenseDTO;
 import com.rakesh.expensetracker.entity.Expense;
 import com.rakesh.expensetracker.entity.User;
 import com.rakesh.expensetracker.exception.ResourceNotFoundException;
+import com.rakesh.expensetracker.kafka.event.ExpenseCreatedEvent;
+import com.rakesh.expensetracker.kafka.producer.ExpenseEventProducer;
 import com.rakesh.expensetracker.repository.ExpenseRepository;
 import com.rakesh.expensetracker.repository.UserRepository;
 import com.rakesh.expensetracker.service.AsyncService;
 import com.rakesh.expensetracker.service.ExpenseService;
 import com.rakesh.expensetracker.service.MonitoringService;
+
+import io.micrometer.core.instrument.Timer;
 
 @Service
 @Transactional
@@ -32,6 +36,8 @@ public class ExpenseServiceImpl implements ExpenseService {
     private final UserRepository userRepository;
     private final AsyncService asyncService;
     private final MonitoringService monitoringService;
+    private final ExpenseEventProducer expenseEventProducer;
+
     private static final Logger log = LoggerFactory.getLogger(ExpenseServiceImpl.class);
 
     private static final Set<String> ALLOWED_SORT_FIELDS =
@@ -41,30 +47,70 @@ public class ExpenseServiceImpl implements ExpenseService {
             ExpenseRepository expenseRepository,
             UserRepository userRepository,
             AsyncService asyncService,
-            MonitoringService monitoringService
+            MonitoringService monitoringService,
+            ExpenseEventProducer expenseEventProducer
     ) {
         this.expenseRepository = expenseRepository;
         this.userRepository = userRepository;
         this.asyncService = asyncService;
         this.monitoringService = monitoringService;
+        this.expenseEventProducer = expenseEventProducer;
     }
 
     @Override
     @CacheEvict(value = "dashboard", key = "#expense.user.email")
     public Expense addExpense(Expense expense) {
 
-        log.info("Adding expense for userId={}, amount={}",
-                expense.getUser().getId(),
-                expense.getAmount());
-        monitoringService.incrementApi("add_expense");
-        Expense saved = expenseRepository.save(expense);
-        
-        // 🔥 async call (non-blocking)
-        asyncService.logExpenseCreation(saved.getId());
+        Timer.Sample sample = monitoringService.startTimer();
 
-        log.info("Expense created successfully id={}", saved.getId());
+        try {
 
-        return saved;
+            log.info("Adding expense for userId={}, amount={}",
+                    expense.getUser().getId(),
+                    expense.getAmount());
+
+            // API metric
+            monitoringService.incrementApi("add_expense");
+
+            Expense saved = expenseRepository.save(expense);
+
+            // BUSINESS METRIC
+            monitoringService.expenseCreated(
+                    saved.getCategory().getName()
+            );
+
+            // async call
+            asyncService.logExpenseCreation(saved.getId());
+
+            // KAFKA EVENT
+            ExpenseCreatedEvent event = new ExpenseCreatedEvent(
+                    saved.getId(),
+                    saved.getUser().getId(),
+                    saved.getAmount(),
+                    saved.getCategory().getName(),
+                    saved.getExpenseDate()
+            );
+
+            expenseEventProducer.publishExpenseCreatedEvent(event);
+
+            log.info("Expense created successfully id={}", saved.getId());
+
+            return saved;
+
+        } catch (Exception e) {
+
+            monitoringService.expenseCreationFailed(
+                    e.getClass().getSimpleName()
+            );
+
+            monitoringService.error();
+
+            throw e;
+
+        } finally {
+
+            monitoringService.stopExpenseCreationTimer(sample);
+        }
     }
 
     @Override
@@ -72,7 +118,9 @@ public class ExpenseServiceImpl implements ExpenseService {
     public Expense updateExpense(Expense expense) {
 
         log.info("Updating expense id={}", expense.getId());
+
         monitoringService.incrementApi("get_expenses");
+
         if (!expenseRepository.existsById(expense.getId())) {
             log.error("Expense not found id={}", expense.getId());
             throw new ResourceNotFoundException("Expense not found: " + expense.getId());
@@ -155,17 +203,23 @@ public class ExpenseServiceImpl implements ExpenseService {
         Page<Expense> expenses;
 
         if (category != null && !category.isBlank()) {
+
             log.debug("Filtering by category={}", category);
+
             expenses = expenseRepository
                     .findByUserAndCategory_Name(user, category, pageable);
 
         } else if (from != null && to != null) {
+
             log.debug("Filtering by date range from={} to={}", from, to);
+
             expenses = expenseRepository
                     .findByUserAndExpenseDateBetween(user, from, to, pageable);
 
         } else {
+
             log.debug("Fetching all expenses without filters");
+
             expenses = expenseRepository.findByUser(user, pageable);
         }
 
@@ -175,6 +229,7 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     private ExpenseDTO toDTO(Expense e) {
+
         return new ExpenseDTO(
                 e.getId(),
                 e.getAmount(),

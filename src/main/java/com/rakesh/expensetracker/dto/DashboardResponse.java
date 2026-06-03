@@ -15,9 +15,25 @@ public class DashboardResponse implements Serializable {
     private String topCategory;
     private Map<String, Double> weeklyTrends; // date -> total spent
     private String mostFrequentCategory;
+    private Double totalBudget;
 
+    private Double remainingBudget;
 
-    // Constructors
+    private Double budgetUsagePercentage;
+
+    private String budgetStatus;
+
+    private Map<String, Object> categoryBudgetInsights;
+
+    private List<String> warningCategories;
+
+    private List<String> criticalCategories;
+
+    private List<String> overspendingCategories;
+    
+    private List<String> insights;
+
+	// Constructors
     public DashboardResponse() {}
 
     public DashboardResponse(Long userId, Double totalExpenses, 
@@ -70,14 +86,83 @@ public class DashboardResponse implements Serializable {
 	public void setMostFrequentCategory(String mostFrequentCategory) {
 		this.mostFrequentCategory = mostFrequentCategory;
 	}
-
-	public Double getMaxSpendingStreak() {
-		return maxSpendingStreak;
+	
+	public Double getTotalBudget() {
+	    return totalBudget;
 	}
 
-	public void setMaxSpendingStreak(Double maxSpendingStreak) {
-		this.maxSpendingStreak = maxSpendingStreak;
+	public void setTotalBudget(Double totalBudget) {
+	    this.totalBudget = totalBudget;
 	}
-	private Double maxSpendingStreak;
+
+	public Double getRemainingBudget() {
+	    return remainingBudget;
+	}
+
+	public void setRemainingBudget(Double remainingBudget) {
+	    this.remainingBudget = remainingBudget;
+	}
+
+	public Double getBudgetUsagePercentage() {
+	    return budgetUsagePercentage;
+	}
+
+	public void setBudgetUsagePercentage(Double budgetUsagePercentage) {
+	    this.budgetUsagePercentage = budgetUsagePercentage;
+	}
+
+	public String getBudgetStatus() {
+	    return budgetStatus;
+	}
+
+	public void setBudgetStatus(String budgetStatus) {
+	    this.budgetStatus = budgetStatus;
+	}
+
+	public Map<String, Object> getCategoryBudgetInsights() {
+	    return categoryBudgetInsights;
+	}
+
+	public void setCategoryBudgetInsights(Map<String, Object> categoryBudgetInsights) {
+	    this.categoryBudgetInsights = categoryBudgetInsights;
+	}
+
+	public List<String> getWarningCategories() {
+	    return warningCategories;
+	}
+
+	public void setWarningCategories(
+	        List<String> warningCategories
+	) {
+	    this.warningCategories = warningCategories;
+	}
+
+	public List<String> getCriticalCategories() {
+	    return criticalCategories;
+	}
+
+	public void setCriticalCategories(
+	        List<String> criticalCategories
+	) {
+	    this.criticalCategories = criticalCategories;
+	}
+
+	public List<String> getOverspendingCategories() {
+	    return overspendingCategories;
+	}
+
+	public void setOverspendingCategories(
+	        List<String> overspendingCategories
+	) {
+	    this.overspendingCategories = overspendingCategories;
+	}
+	
+	public List<String> getInsights() {
+		return insights;
+	}
+
+	public void setInsights(List<String> insights) {
+		this.insights = insights;
+	}
 
 }

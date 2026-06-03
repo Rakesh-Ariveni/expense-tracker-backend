@@ -15,9 +15,7 @@ public class ExpenseRequest {
     @NotNull
     private Long userId;
 
-    @NotNull
-    private Long categoryId;
-    
+    @NotNull    
     private String categoryName;
 
 
@@ -27,8 +25,8 @@ public class ExpenseRequest {
 	public void setCategoryName(String categoryName) {
 		this.categoryName = categoryName;
 	}
-	// Getters & Setters
-    public Double getAmount() { return amount; }
+
+	public Double getAmount() { return amount; }
     public void setAmount(Double amount) { this.amount = amount; }
 
     public String getDescription() { return description; }
@@ -40,6 +38,4 @@ public class ExpenseRequest {
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
 
-    public Long getCategoryId() { return categoryId; }
-    public void setCategoryId(Long categoryId) { this.categoryId = categoryId; }
 }

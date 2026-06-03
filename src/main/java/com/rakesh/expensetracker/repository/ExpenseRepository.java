@@ -101,4 +101,16 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
             @Param("user") User user,
             Pageable pageable
     );
+    
+    @Query("""
+    	    SELECT COALESCE(SUM(e.amount), 0)
+    	    FROM Expense e
+    	    WHERE e.user = :user
+    	      AND e.expenseDay BETWEEN :startDate AND :endDate
+    	""")
+    	Double findTotalExpensesBetweenDates(
+    	        @Param("user") User user,
+    	        @Param("startDate") LocalDate startDate,
+    	        @Param("endDate") LocalDate endDate
+    );
 }

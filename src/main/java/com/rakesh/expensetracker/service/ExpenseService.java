@@ -22,7 +22,7 @@ public interface ExpenseService {
             String sortBy,
             String direction,
             String category,
-            LocalDateTime from,
+            LocalDateTime froam,
             LocalDateTime to
     );
 }
