@@ -7,9 +7,11 @@ on:
 
 jobs:
   build:
+
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout Code
         uses: actions/checkout@v4
 
@@ -22,8 +24,16 @@ jobs:
       - name: Build Application
         run: mvn clean package
 
-      - name: Upload JAR
-        uses: actions/upload-artifact@v4
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
-          name: expense-tracker-jar
-          path: target/*.jar
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build Docker Image
+        run: |
+          docker build -t rakeshariveni/expense-tracker-backend:latest .
+
+      - name: Push Docker Image
+        run: |
+          docker push rakeshariveni/expense-tracker-backend:latest
